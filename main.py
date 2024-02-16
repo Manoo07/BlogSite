@@ -7,8 +7,6 @@ from schemas import BlogBase,UserBase,AdminBase
 app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
 
-
-
 def get_db() -> Tuple[Session, ...]:  # Change the return type to Tuple
     db = SessionLocal()
     try:
