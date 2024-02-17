@@ -1,0 +1,70 @@
+body{
+    background-color: #DCF2F1;
+}
+
+.card-custom{
+    /* align-self: center;
+     */
+    margin:10px auto ;
+    width: 85%;
+    height: 60 rem;
+    padding: 30px;
+    border-radius: 30px;
+}
+
+.blog-custom{
+    margin-top: 10px;
+}
+.content-custom{
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+
+.profile-container img {
+    float: left;
+    margin-right: 10px; /* Adjust as needed */
+    /* margin-bottom: 15px; */
+
+  }
+  
+  .updated-by {
+    margin-top: 0; /* Reset default margin */
+    display: inline-block; /* Ensures it's on the same line */
+    margin-bottom: 15px;
+  }
+
+  .card-title{
+    margin-top: 15px;
+  }
+
+  .like{
+    margin:5px;
+  }
+  
+  .dislike{
+    position: relative;
+    top:8px;
+    margin:5px;
+  }
+
+
+
+  .custom-form{
+    margin: auto;
+    width:85%;
+    background-color: #D0E8F2;
+
+    padding: 30px;
+    border-radius: 30px;
+
+  }
+
+  .custom-input{
+    border-radius: 20px;
+
+  }
+  .btn-form{
+    margin: auto;
+    border-radius: 30px;
+  }
