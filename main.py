@@ -1,29 +1,44 @@
-from fastapi import FastAPI, HTTPException, Depends, status,Header
-from typing import Tuple
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status,Header, Query,Request
+from fastapi.middleware.cors import CORSMiddleware
+from settings import BLOGS_PER_PAGE
+from typing import Tuple,List
 import models
 from database import engine,SessionLocal
 from sqlalchemy.orm import Session
 from schemas import BlogBase,UserBase,AdminBase
+
 app = FastAPI()
+router = APIRouter()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],
+)
+# app.include_router(router)
 models.Base.metadata.create_all(bind=engine)
 
-def get_db() -> Tuple[Session, ...]:  # Change the return type to Tuple
+def get_db() -> Tuple[Session, ...]:  
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-db_dependency = (Session, Depends(get_db))  # Replace Annotated with a regular tuple
+db_dependency = (Session, Depends(get_db))
 
 
 # Blogs
-@app.post('/blogs/{id}',status_code = status.HTTP_200_OK)
-async def create_blog(id:int,blog:BlogBase,db: Session = Depends(get_db)):
-    db_blog = models.Blog(UserID=id, **blog.dict())
+@app.post('/blogs/{user_id}',status_code = status.HTTP_200_OK)
+async def create_blog(user_id:int,blog:BlogBase,db: Session = Depends(get_db)):
+    db_blog = models.Blog(UserID=user_id, **blog.dict())
     db.add(db_blog)
     db.commit()
+    db.refresh(db_blog)
     return {db_blog} 
+
 
 @app.get('/blogs/{blogId}',status_code = status.HTTP_200_OK)
 async def fetchBlog(blogId:int,db: Session = Depends(get_db)):
@@ -35,7 +50,7 @@ async def fetchBlog(blogId:int,db: Session = Depends(get_db)):
 @app.get('/blogs/', status_code=status.HTTP_200_OK)
 async def fetch_all_blogs(db: Session = Depends(get_db)):
     all_blogs = db.query(models.Blog).all()
-    return {"blogs": all_blogs}
+    return all_blogs
 
 #fecth all the blogs of user
 @app.get('/users/{user_id}/blogs/',status_code = status.HTTP_200_OK)
@@ -44,7 +59,7 @@ async def fetchUserBlogs(user_id:int,db: Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=404,detail='User not found')
     blogs = db.query(models.Blog).filter(models.Blog.UserID == user_id).all()
-    return {"user_name":user.FirstName,"blogs":blogs}
+    return {blogs}
 
 
 @app.put('/blogs/{blogId}',status_code = status.HTTP_200_OK)
@@ -75,7 +90,21 @@ async def create_user(user: UserBase, db: Session = Depends(get_db)):
     db_user = models.User(**user.dict())
     db.add(db_user)
     db.commit()
+    db.refresh(db_user)
     return db_user
+
+@app.post('/sign-in',status_code=status.HTTP_200_OK)
+async def checkForUserInDB(request:Request,db:Session = Depends(get_db)):
+    request_data = await request.json()
+    email = request_data.get('Email')
+    password = request_data.get('Password')
+    user = db.query(models.User).filter(models.User.Email == email).first()
+    if user is None:
+        raise HTTPException(status_code=404,detail='User not found')
+    if(user.Password != password):
+        raise HTTPException(status_code=404,detail='Incorrect Password')
+    return {"UserId":user.UserID}
+
 
 @app.get('/users/{user_id}',status_code=status.HTTP_200_OK)
 async def fetchUser(user_id:int, db:Session = Depends(get_db)):
@@ -83,6 +112,16 @@ async def fetchUser(user_id:int, db:Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=404,detail='User not found')
     return user 
+# fecth all the blogs according to page wise 
+@app.get("/blogs/pagewise/{page}")
+async def get_blogs(page: int , db: Session = Depends(get_db)):
+    offset = (page - 1) * BLOGS_PER_PAGE
+    total_blogs = db.query(models.Blog).count()
+
+    limit = min(BLOGS_PER_PAGE, total_blogs - offset)
+    blogs = db.query(models.Blog).join(models.User).order_by(models.Blog.UpdatedAt.desc()).offset(offset).limit(limit).all()
+    return blogs
+
 
 @app.get('/users/',status_code = status.HTTP_200_OK)
 async def fetchUsers(db:Session = Depends(get_db)):
@@ -101,6 +140,8 @@ async def updateUser(id:int,fName:str,lName:str,db:Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     return {"User": user}
+
+
 #Update Password
 @app.put('/users/password/{id}',status_code = status.HTTP_200_OK)
 async def updateUserPassword(id:int,db:Session = Depends(get_db),password: str = Header(..., convert_underscores=False)):
@@ -111,6 +152,8 @@ async def updateUserPassword(id:int,db:Session = Depends(get_db),password: str =
     db.commit()
     db.refresh(user)
     return {"User": user}
+
+
 
 
 

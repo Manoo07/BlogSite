@@ -1,6 +1,7 @@
 from sqlalchemy import  Column, Integer, String, Text, TIMESTAMP, ForeignKey
 from database import Base
 from sqlalchemy.sql import func
+
 class User(Base):
     __tablename__ = "Users"
     UserID = Column(Integer, primary_key=True, index=True)
@@ -8,7 +9,6 @@ class User(Base):
     Password = Column(String(255), nullable=False)
     FirstName = Column(String(50), nullable=False)
     LastName = Column(String(50), nullable=False)
-
 
 class Blog(Base):
     __tablename__ = "Blogs"
@@ -18,7 +18,6 @@ class Blog(Base):
     Content = Column(Text, nullable=False)
     CreatedAt = Column(TIMESTAMP, server_default=func.now(), nullable=False)
     UpdatedAt = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now(), nullable=False)
-
 
 class Admin(Base):
     __tablename__ = "Admins"
