@@ -55,13 +55,40 @@ async def fetch_all_blogs(db: Session = Depends(get_db)):
 #fecth all the blogs of user
 @app.get('/users/{user_id}/blogs/',status_code = status.HTTP_200_OK)
 async def fetchUserBlogs(user_id:int,db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.UserID == user_id).first()
-    if user is None:
-        raise HTTPException(status_code=404,detail='User not found')
+    # user = db.query(models.User).filter(models.User.UserID == user_id).first()
+    # if user is None:
+    #     raise HTTPException(status_code=404,detail='User not found')
     blogs = db.query(models.Blog).filter(models.Blog.UserID == user_id).all()
     return {blogs}
 
+# fecth all the blogs of user pagewise
+@app.get("/blogs/pagewise/{userId}/{page}")
+async def get_blogs(page: int,userId:int , db: Session = Depends(get_db)):
+    offset = (page - 1) * BLOGS_PER_PAGE
+    total_blogs = db.query(models.Blog).count()
 
+    limit = min(BLOGS_PER_PAGE, total_blogs - offset)
+    blogs = (
+        db.query(models.Blog, models.User.FirstName)
+        .join(models.User)
+        .filter(models.User.UserID == userId) 
+        .order_by(models.Blog.UpdatedAt.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    blog_results = [
+        {
+            "BlogID": blog.Blog.BlogID,
+            "Title": blog.Blog.Title,
+            "Content": blog.Blog.Content,
+            "UserName": blog.FirstName
+        }
+        for blog in blogs
+    ]
+    print(blog_results)
+    return blog_results
+# update blog
 @app.put('/blogs/{blogId}',status_code = status.HTTP_200_OK)
 async def updateBlog(blogId:int,blog_data:BlogBase,db: Session = Depends(get_db)):
     db_blog = db.query(models.Blog).filter(models.Blog.BlogID == blogId).first()
@@ -111,7 +138,8 @@ async def fetchUser(user_id:int, db:Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.UserID == user_id).first()
     if user is None:
         raise HTTPException(status_code=404,detail='User not found')
-    return user 
+    return {"FirstName":user.FirstName,"LastName":user.LastName}
+
 # fecth all the blogs according to page wise 
 @app.get("/blogs/pagewise/{page}")
 async def get_blogs(page: int , db: Session = Depends(get_db)):
@@ -119,8 +147,26 @@ async def get_blogs(page: int , db: Session = Depends(get_db)):
     total_blogs = db.query(models.Blog).count()
 
     limit = min(BLOGS_PER_PAGE, total_blogs - offset)
-    blogs = db.query(models.Blog).join(models.User).order_by(models.Blog.UpdatedAt.desc()).offset(offset).limit(limit).all()
-    return blogs
+    # blogs = db.query(models.Blog).join(models.User).order_by(models.Blog.UpdatedAt.desc()).offset(offset).limit(limit).all()
+    blogs = (
+        db.query(models.Blog, models.User.FirstName)
+        .join(models.User)
+        .order_by(models.Blog.UpdatedAt.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    blog_results = [
+        {
+            "BlogID": blog.Blog.BlogID,
+            "Title": blog.Blog.Title,
+            "Content": blog.Blog.Content,
+            "UserName": blog.FirstName
+        }
+        for blog in blogs
+    ]
+    print(blog_results)
+    return blog_results
 
 
 @app.get('/users/',status_code = status.HTTP_200_OK)

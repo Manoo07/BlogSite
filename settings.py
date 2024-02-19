@@ -1,2 +1,2 @@
 
-BLOGS_PER_PAGE = 7  # Set the desired number of blogs per page
+BLOGS_PER_PAGE = 3  # Set the desired number of blogs per page
