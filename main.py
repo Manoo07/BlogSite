@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status,Header, Query,Request
+import time
 from fastapi.middleware.cors import CORSMiddleware
 from settings import BLOGS_PER_PAGE
 from typing import Tuple,List
@@ -33,7 +34,7 @@ db_dependency = (Session, Depends(get_db))
 # Blogs
 @app.post('/blogs/{user_id}',status_code = status.HTTP_200_OK)
 async def create_blog(user_id:int,blog:BlogBase,db: Session = Depends(get_db)):
-    db_blog = models.Blog(UserID=user_id, **blog.dict())
+    db_blog = await models.Blog(UserID=user_id, **blog.dict())
     db.add(db_blog)
     db.commit()
     db.refresh(db_blog)
