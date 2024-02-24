@@ -202,6 +202,54 @@ async def updateUserPassword(id:int,db:Session = Depends(get_db),password: str =
 
 
 
+#Admin
+@app.post('/admins/', status_code=status.HTTP_201_CREATED)
+async def create_admin(admin : AdminBase, db : Session = Depends(get_db)):
+    db_admin = models.Admin(**admin.dict())
+    db.add(db_admin)
+    db.commit()
+    return db_admin
+
+
+@app.get('/admins/{admin_id}',status_code=status.HTTP_200_OK)
+async def fetchAdmin(admin_id:int, db:Session = Depends(get_db)):
+    admin = db.query(models.Admin).filter(models.Admin.AdminID == admin_id).first()
+    if admin is None:
+        raise HTTPException(status_code=404,detail='Admin not found')
+    return admin 
+
+
+@app.get('/admins/',status_code = status.HTTP_200_OK)
+async def fetchAdmins(db:Session = Depends(get_db)):
+    all_admins = db.query(models.Admin).all()
+    return {"admins":all_admins}
+
+
+@app.put('/admins/{admin_id}',status_code = status.HTTP_200_OK)
+async def updateAdmin(admin_id:int,fName:str,lName:str,db:Session = Depends(get_db)):
+    admin = db.query(models.Admin).filter(models.Admin.AdminID == admin_id).first()
+    if admin is None:
+        raise HTTPException(status_code=404, detail='Admin not found')
+    if fName:
+        admin.FirstName = fName
+    if lName:
+        admin.LastName = lName
+    db.commit()
+    db.refresh(admin)
+    return {"Admin": admin}
+
+
+@app.delete('/admins/{admin_id}', status_code=status.HTTP_200_OK)
+async def delete_admin(admin_id: int, db: Session = Depends(get_db)):
+    db_admin = db.query(models.Admin).filter(models.Admin.AdminID == admin_id).first()
+    if db_admin is None:
+        raise HTTPException(status_code=404, detail='Admin not found')
+    db.delete(db_admin)
+    db.commit()
+    return {}
+
+
+
 
 
 
